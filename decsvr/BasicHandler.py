@@ -1,5 +1,17 @@
-from BaseHTTPServer import BaseHTTPRequestHandler
-from urlparse import urlparse, parse_qs
+import json
+
+try:
+    # Python 3
+    from urllib.parse import urlparse, parse_qs
+    
+    from http.server import BaseHTTPRequestHandler
+    import decsvr.ContentType as ContentType
+except ImportError:
+    # Python 2
+    from urlparse import urlparse, parse_qs
+
+    from BaseHTTPServer import BaseHTTPRequestHandler
+    import ContentType
 
 class GetRequest(object):
     def __init__(self, path, query):
@@ -13,7 +25,10 @@ class PostRequest(object):
         self.body = body
 
 class BasicHandler(BaseHTTPRequestHandler):
-    def send_http_response(self, status_code = 200, content_type = "", content = None, extend = {}):
+    def send_http_response(self, status_code = 200, content_type = ContentType.PLANE_TEXT, content = None, extend = {}):
+        
+        if content_type == ContentType.APPLICATION_JSON:
+            content = json.dumps(content)
 
         self.send_response(status_code)
         
@@ -26,13 +41,17 @@ class BasicHandler(BaseHTTPRequestHandler):
         self.send_header('Connection', 'keep-alive')
         self.send_header('Last-Modified', self.date_time_string())
         
-        if content_type != "":
-            self.send_header('Content-type', content_type)
+        self.send_header('Content-type', ContentType.get_mime_by_content_code(content_type))
         
         for key in extend.keys():
             self.send_header(key, extend[key])
         
         self.end_headers()
+        
+        try:
+            content = bytes(content, 'UTF-8')
+        except:
+            pass
         
         self.wfile.write(content)
 
@@ -52,4 +71,4 @@ class BasicHandler(BaseHTTPRequestHandler):
         self.handle_post_request(request_info)
     
     def do_OPTIONS(self):
-        self.send_http_response(200, 'text/plain', 'OK')
+        self.send_http_response(200, ContentType.PLANE_TEXT, 'OK')

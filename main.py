@@ -1,6 +1,6 @@
 from decsvr import DecServer
 
-server = DecServer.DecServer(8000)
+server = DecServer.DecServer(8000, True)
 
 from endpoint import functions
 from endpoint import test

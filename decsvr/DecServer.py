@@ -1,13 +1,24 @@
-from BaseHTTPServer import HTTPServer
-from SocketServer import ThreadingMixIn
+try:
+    # Python 3
+    from http.server import HTTPServer
+    from socketserver import ThreadingMixIn
 
-from DecServerHandler import DecServerHandler
+    from decsvr.DecServerHandler import DecServerHandler
+except ImportError:
+    # Python 2
+    from BaseHTTPServer import HTTPServer
+    from SocketServer import ThreadingMixIn
+
+    from DecServerHandler import DecServerHandler
 
 class DecServer(ThreadingMixIn, HTTPServer):
     __get_endpoints__ = {}
     __post_endpoints__ = {}
+    __resoleve_files__ = False
     
-    def __init__(self, port = 8000):
+    def __init__(self, port = 8000, resoleve_files = False):
+        self.__resoleve_files__ = resoleve_files
+
         HTTPServer.__init__(self, ('', port), DecServerHandler)
 
     def incude_router(self, router):
