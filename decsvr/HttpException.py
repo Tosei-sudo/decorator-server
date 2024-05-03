@@ -18,8 +18,8 @@ class Http400Exception(HttpException):
         super(Http400Exception, self).__init__(400, message)
 
 class Http400MissingParameterException(Http400Exception):
-    def __init__(self, parameter, content_type = ContentType.PLANE_TEXT):
-        super(Http400MissingParameterException, self).__init__('Missing parameter: ' + parameter)
+    def __init__(self, parameters, content_type = ContentType.PLANE_TEXT):
+        super(Http400MissingParameterException, self).__init__('Missing parameter: ' + ", ".join(parameters))
 
 class Http403Exception(HttpException):
     def __init__(self, message = 'Forbidden', content_type = ContentType.PLANE_TEXT):
