@@ -2,11 +2,13 @@ import os
 
 try:
     from decsvr.BasicHandler import BasicHandler
+    from urllib.parse import unquote
 
     import decsvr.HttpException as HttpException
     import decsvr.ContentType as ContentType
 except ImportError:
     from BasicHandler import BasicHandler
+    from urlparse import unquote
 
     import HttpException
     import ContentType
@@ -58,11 +60,40 @@ class DecServerHandler(BasicHandler):
         except HttpException.HttpException as e:
             self.send_http_response(e.code, ContentType.PLANE_TEXT, e.message)
         except Exception as e:
+            print(e)
+            self.send_http_response(500, ContentType.PLANE_TEXT, 'Internal Server Error')
+
+    def handle_put_request(self, request_info):
+        try:
+            endpoints = self.server.__put_endpoints__
+
+            if self.__handle_request__(endpoints, request_info):
+                return
+            
+            raise HttpException.Http404Exception()
+        except HttpException.HttpException as e:
+            self.send_http_response(e.code, ContentType.PLANE_TEXT, e.message)
+        except Exception as e:
+            print(e)
+            self.send_http_response(500, ContentType.PLANE_TEXT, 'Internal Server Error')
+
+    def handle_delete_request(self, request_info):
+        try:
+            endpoints = self.server.__delete_endpoints__
+
+            if self.__handle_request__(endpoints, request_info):
+                return
+            
+            raise HttpException.Http404Exception()
+        except HttpException.HttpException as e:
+            self.send_http_response(e.code, ContentType.PLANE_TEXT, e.message)
+        except Exception as e:
+            print(e)
             self.send_http_response(500, ContentType.PLANE_TEXT, 'Internal Server Error')
 
     def send_file(self, request_info):
         try:
-            file_path = request_info.path[1:]
+            file_path = unquote(request_info.path[1:]).decode('utf-8')
             
             if not os.path.isfile(file_path):
                 raise HttpException.Http404Exception()

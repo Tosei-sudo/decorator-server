@@ -13,16 +13,25 @@ except ImportError:
     from BaseHTTPServer import BaseHTTPRequestHandler
     import ContentType
 
-class GetRequest(object):
-    def __init__(self, path, query):
-        self.path = path
-        self.query = query
-
-class PostRequest(object):
-    def __init__(self, path, query, body):
-        self.path = path
-        self.query = query
-        self.body = body
+class RequestInfo(object):
+    def __init__(self, handler):
+        self.headers = handler.headers
+        
+        url = urlparse(handler.path)
+        
+        self.path = url.path
+        self.query = parse_qs(url.query)
+        self.full_path = handler.path
+        
+        self.headers = handler.headers
+        
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length == 0:
+                content_length = int(self.headers.get('content-length', 0))
+            self.body = handler.rfile.read(content_length)
+        except:
+            self.body = None
 
 class BasicHandler(BaseHTTPRequestHandler):
     def send_http_response(self, status_code = 200, content_type = ContentType.PLANE_TEXT, content = None, extend = {}):
@@ -33,7 +42,7 @@ class BasicHandler(BaseHTTPRequestHandler):
         self.send_response(status_code)
         
         self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Methods', '*')
         self.send_header('Access-Control-Allow-Headers', '*')
         
         if content:
@@ -56,19 +65,16 @@ class BasicHandler(BaseHTTPRequestHandler):
         self.wfile.write(content)
 
     def do_GET(self):
-        parsed_path = urlparse(self.path)
-
-        query = parse_qs(parsed_path.query)
-        request_info = GetRequest(parsed_path.path, query)
-        self.handle_get_request(request_info)
+        self.handle_get_request(RequestInfo(self))
     
     def do_POST(self):
-        parsed_path = urlparse(self.path)
-        query = parse_qs(parsed_path.query)
-        content_length = int(self.headers['Content-Length'])
-        post_data = self.rfile.read(content_length)
-        request_info = PostRequest(parsed_path.path, query, post_data)
-        self.handle_post_request(request_info)
+        self.handle_post_request(RequestInfo(self))
+
+    def do_PUT(self):
+        self.handle_put_request(RequestInfo(self))
+
+    def do_DELETE(self):
+        self.handle_delete_request(RequestInfo(self))
     
     def do_OPTIONS(self):
         self.send_http_response(200, ContentType.PLANE_TEXT, 'OK')
